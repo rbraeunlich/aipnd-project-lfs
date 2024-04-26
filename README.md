@@ -17,5 +17,6 @@ With name "data":
 
 ### Install deps
 
-conda install numpy pandas jupyter notebook
-conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
+`conda install numpy pandas jupyter notebook matplotlib`
+
+`conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia`
