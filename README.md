@@ -20,3 +20,8 @@ With name "data":
 `conda install numpy pandas jupyter notebook matplotlib`
 
 `conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia`
+
+## Download Git LFS files
+
+git lfs fetch
+git lfs checkout
