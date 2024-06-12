@@ -19,11 +19,11 @@ def get_input_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('dir', type=str,
                         help='path to the image folder')
-    parser.add_argument('save_dir', type=str,
+    parser.add_argument('--save_dir', type=str,
                         help='path to where the model shall be saved', default=".")
     parser.add_argument('--arch', type=str, default='vgg11',
                         help='CNN Model Architecture (pick any from https://pytorch.org/vision/stable/models.html#classification)')
-    parser.add_argument('--epochs', type=int, default=20, action='store_true',
+    parser.add_argument('--epochs', type=int, default=20,
                         help='Training epochs')
     parser.add_argument('--learning_rate', type=float, default=0.01,
                         help='Learning rate')
@@ -36,30 +36,64 @@ def get_input_args():
 
 def select_model(model, hidden_units):
     selected_model = models.get_model(model, weights="DEFAULT")
+    num_ftrs = selected_model.classifier[0].in_features
     classifier = nn.Sequential(OrderedDict([
-        ('fc1', nn.Linear(hidden_units, 102)),
+        ('fc1', nn.Linear(num_ftrs, hidden_units)),
+        ('relu', nn.ReLU()),
+        ('dropout', nn.Dropout(0.2)),
+        ('fc2', nn.Linear(hidden_units, 102)),
         ('output', nn.LogSoftmax(dim=1))
     ]))
 
-    model.classifier = classifier
+    selected_model.classifier = classifier
 
     return selected_model
 
 
+def load_images(data_dir):
+    train_dir = data_dir + '/train'
+    valid_dir = data_dir + '/valid'
+    test_dir = data_dir + '/test'
+    data_transforms = transforms.Compose([transforms.Resize(255),
+                                          transforms.CenterCrop(224),
+                                          transforms.ToTensor(),
+                                          transforms.Normalize([0.485, 0.456, 0.406],
+                                                               [0.229, 0.224, 0.225])])
+
+    train_transforms = transforms.Compose([transforms.RandomRotation(30),
+                                           transforms.RandomResizedCrop(224),
+                                           transforms.RandomHorizontalFlip(),
+                                           transforms.ToTensor(),
+                                           transforms.Normalize([0.485, 0.456, 0.406],
+                                                                [0.229, 0.224, 0.225])])
+    train_image_datasets = datasets.ImageFolder(train_dir, transform=train_transforms)
+    valid_image_datasets = datasets.ImageFolder(valid_dir, transform=data_transforms)
+    test_image_datasets = datasets.ImageFolder(test_dir, transform=data_transforms)
+    train_dataloaders = torch.utils.data.DataLoader(train_image_datasets, batch_size=32, shuffle=True)
+    valid_dataloaders = torch.utils.data.DataLoader(valid_image_datasets, batch_size=32)
+    test_dataloaders = torch.utils.data.DataLoader(test_image_datasets, batch_size=32)
+    return train_dataloaders, valid_dataloaders, test_dataloaders, train_image_datasets
+
+
+def validate_model(model, valid_dataloaders, device):
+    accuracy = 0
+    model.eval()
+    with torch.no_grad():
+        for inputs, labels in valid_dataloaders:
+            inputs, labels = inputs.to(device), labels.to(device)
+            logps = model.forward(inputs)
+
+            # Calculate accuracy
+            ps = torch.exp(logps)
+            top_p, top_class = ps.topk(1, dim=1)
+            equals = top_class == labels.view(*top_class.shape)
+            accuracy += torch.mean(equals.type(torch.FloatTensor)).item()
+
+            print(f"Validation accuracy: {accuracy/len(valid_dataloaders):.3f}")
+
+
 def train_model(model, dir, epochs, learning_rate, use_gpu):
-    train_dataloaders = datasets.ImageFolder(dir, transform=transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ]))
-    test_dataloaders = datasets.ImageFolder(dir, transform=transforms.Compose([
-        transforms.RandomRotation(30),
-        transforms.RandomResizedCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406],
-                             [0.229, 0.224, 0.225])]))
+    train_dataloaders, valid_dataloaders, test_dataloaders, train_image_datasets = load_images(dir)
     criterion = nn.NLLLoss()
     optimizer = optim.Adam(model.classifier.parameters(), lr=learning_rate)
     device = torch.device("cuda" if use_gpu else "cpu")
@@ -106,7 +140,8 @@ def train_model(model, dir, epochs, learning_rate, use_gpu):
                       f"Test accuracy: {accuracy / len(test_dataloaders):.3f}")
                 running_loss = 0
                 model.train()
-    return model, train_dataloaders.class_to_idx, optimizer
+    validate_model(model, valid_dataloaders, device)
+    return model, train_image_datasets.class_to_idx, optimizer
 
 
 def save_model(model, class_to_idx, epochs, optimizer, arch):
@@ -116,7 +151,7 @@ def save_model(model, class_to_idx, epochs, optimizer, arch):
         # 'optimizer_state_dict': optimizer.state_dict(),
         # 'epochs': epochs,
         'arch': arch
-    }, 'model.pth')
+    }, 'your_model.pth')
 
 
 def main():

@@ -8,12 +8,13 @@ Project code for Udacity's AI Programming with Python Nanodegree program. In thi
 
 ## Create new Conda env
 
-With name "data":
-`conda create -n data python=3.6 numpy pandas`
+With name "aipnd-project_311":
+
+`conda create -n aipnd-project_311 python=3.11 numpy`
 
 ### My env name
 
-`conda activate aipnd-project`
+`conda activate aipnd-project_311`
 
 ### Install deps
 
@@ -24,4 +25,5 @@ With name "data":
 ## Download Git LFS files
 
 git lfs fetch
+
 git lfs checkout
