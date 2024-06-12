@@ -20,7 +20,7 @@ def get_input_args():
     parser.add_argument('dir', type=str,
                         help='path to the image folder')
     parser.add_argument('--save_dir', type=str,
-                        help='path to where the model shall be saved', default=".")
+                        help='path to where the model shall be saved', default="your-model.pth")
     parser.add_argument('--arch', type=str, default='vgg11',
                         help='CNN Model Architecture (pick any from https://pytorch.org/vision/stable/models.html#classification)')
     parser.add_argument('--epochs', type=int, default=20,
@@ -144,14 +144,13 @@ def train_model(model, dir, epochs, learning_rate, use_gpu):
     return model, train_image_datasets.class_to_idx, optimizer
 
 
-def save_model(model, class_to_idx, epochs, optimizer, arch):
+def save_model(model, class_to_idx, arch, hidden_units, save_dir):
     torch.save({
         'class_to_idx': class_to_idx,
         'model_state_dict': model.state_dict(),
-        # 'optimizer_state_dict': optimizer.state_dict(),
-        # 'epochs': epochs,
+        'hidden_units': hidden_units,
         'arch': arch
-    }, 'your_model.pth')
+    }, save_dir)
 
 
 def main():
@@ -166,7 +165,7 @@ def main():
 
     model = select_model(arch, hidden_units)
     model, class_to_idx, optimizer = train_model(model, data_dir, epochs, learning_rate, useGpu)
-    save_model(model, class_to_idx, epochs, optimizer, arch)
+    save_model(model, class_to_idx, arch, hidden_units, save_dir)
 
 
 # Call to main function to run the program
