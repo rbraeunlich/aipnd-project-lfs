@@ -81,7 +81,7 @@ def process_image(image_path):
 def predict(image_path, model, class_to_idx, use_gpu, topk):
     ''' Predict the class (or classes) of an image using a trained deep learning model.
     '''
-    device = torch.device("cuda" if use_gpu else "cpu")
+    device = torch.device("cuda" if use_gpu and torch.cuda.is_available() else "cpu")
     model.to(device)
     model = model.eval()
     img = process_image(image_path)

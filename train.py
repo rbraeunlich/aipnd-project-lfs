@@ -96,7 +96,7 @@ def train_model(model, dir, epochs, learning_rate, use_gpu):
     train_dataloaders, valid_dataloaders, test_dataloaders, train_image_datasets = load_images(dir)
     criterion = nn.NLLLoss()
     optimizer = optim.Adam(model.classifier.parameters(), lr=learning_rate)
-    device = torch.device("cuda" if use_gpu else "cpu")
+    device = torch.device("cuda" if use_gpu and torch.cuda.is_available() else "cpu")
     model.to(device)
     steps = 0
     running_loss = 0
