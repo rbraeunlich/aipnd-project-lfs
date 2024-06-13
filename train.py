@@ -21,8 +21,8 @@ def get_input_args():
                         help='path to the image folder')
     parser.add_argument('--save_dir', type=str,
                         help='path to where the model shall be saved', default="your-model.pth")
-    parser.add_argument('--arch', type=str, default='vgg11',
-                        help='CNN Model Architecture (pick any from https://pytorch.org/vision/stable/models.html#classification)')
+    parser.add_argument('--arch', type = str, default = 'vgg', choices = ['vgg', 'alexnet', 'resnet'],
+                        help = 'CNN Model Architecture (resnet, alexnet, or vgg)')
     parser.add_argument('--epochs', type=int, default=20,
                         help='Training epochs')
     parser.add_argument('--learning_rate', type=float, default=0.01,
@@ -35,8 +35,14 @@ def get_input_args():
 
 
 def select_model(model, hidden_units):
-    selected_model = models.get_model(model, weights="DEFAULT")
-    num_ftrs = selected_model.classifier[0].in_features
+    selected_model = models.vgg16(weights="DEFAULT")
+    num_ftrs = 25088
+    if model == 'alexnet':
+        selected_model = models.alexnet(weights="DEFAULT")
+        num_ftrs = 9216
+    elif model == 'resnet':
+        selected_model = models.resnet18(weights="DEFAULT")
+        num_ftrs = 512
     classifier = nn.Sequential(OrderedDict([
         ('fc1', nn.Linear(num_ftrs, hidden_units)),
         ('relu', nn.ReLU()),
